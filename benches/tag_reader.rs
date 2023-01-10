@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use lofty::{Accessor, AudioFile, Probe, TaggedFileExt};
 use metaflac::{block::VorbisComment, Tag};
+use std::path::Path;
 pub struct AudioMetadata {
     pub name: String,
     pub album: String,
@@ -119,17 +120,11 @@ fn tag_reader(c: &mut Criterion) {
     let mut group = c.benchmark_group("Flac Tag Reader");
     group.bench_function(stringify!("metaflac"), |b| {
         b.iter(|| {
-            get_metadata_metaflac(
-                "C:\\Users\\rylee\\Documents\\projects\\tag_bench\\full_test.flac".to_string(),
-            )
+            get_metadata_metaflac(Path::new("./full_test.flac").to_string_lossy().to_string())
         })
     });
     group.bench_function(stringify!("lofty"), |b| {
-        b.iter(|| {
-            get_metadata_lofty(
-                "C:\\Users\\rylee\\Documents\\projects\\tag_bench\\full_test.flac".to_string(),
-            )
-        })
+        b.iter(|| get_metadata_lofty(Path::new("./full_test.flac").to_string_lossy().to_string()))
     });
     group.finish();
 }
