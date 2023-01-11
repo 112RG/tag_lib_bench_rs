@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use lofty::{Accessor, AudioFile, Probe, TaggedFileExt};
+use lofty::{flac::FlacFile, Accessor, AudioFile, Probe, TaggedFileExt};
 use metaflac::{block::VorbisComment, Tag};
 use std::path::Path;
 pub struct AudioMetadata {
@@ -118,28 +118,22 @@ pub fn get_metadata_lofty(path: String) -> AudioMetadata {
 
 pub fn get_metadata_lofty_specify_type(path: String) -> AudioMetadata {
     let file = std::fs::File::open(&path).unwrap();
-    let reader = std::io::BufReader::new(file);
-    let mut probe = Probe::new(reader);
-    probe.set_file_type(lofty::FileType::FLAC);
-    let tagged_file = probe.read().expect("ERROR: Failed to read file!");
-    let tag = match tagged_file.primary_tag() {
-        Some(primary_tag) => primary_tag,
-        None => tagged_file.first_tag().expect("ERROR: No tags found!"),
-    };
 
-    let properties = tagged_file.properties();
-
+    let flac = FlacFile::read_from(
+        std::io::BufReader::new(file).get_mut(),
+        lofty::ParseOptions::new(),
+    )
+    .unwrap();
+    let vorbis = flac.vorbis_comments().unwrap();
+    let properties = flac.properties();
     let duration = properties.duration();
 
     let metadata: AudioMetadata = AudioMetadata {
-        name: tag.title().unwrap().to_string(),
-        track: tag.track().unwrap(),
-        album: tag.album().unwrap().to_string(),
-        album_artist: tag
-            .get_string(&lofty::ItemKey::AlbumArtist)
-            .unwrap_or("None")
-            .to_owned(),
-        year: tag.year().unwrap(),
+        name: vorbis.title().unwrap().to_string(),
+        track: vorbis.track().unwrap(),
+        album: vorbis.album().unwrap().to_string(),
+        album_artist: vorbis.get(&String::from("ALBUMARTIST")).unwrap().to_owned(),
+        year: vorbis.year().unwrap(),
         path,
         lossless: true,
         duration: duration.as_secs(),
