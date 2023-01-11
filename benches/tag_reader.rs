@@ -117,7 +117,7 @@ pub fn get_metadata_lofty(path: String) -> AudioMetadata {
 }
 
 pub fn get_metadata_lofty_specify_type(path: String) -> AudioMetadata {
-    let file = std::fs::File::open(path).unwrap();
+    let file = std::fs::File::open(&path).unwrap();
     let reader = std::io::BufReader::new(file);
     let mut probe = Probe::new(reader);
     probe.set_file_type(lofty::FileType::FLAC);
