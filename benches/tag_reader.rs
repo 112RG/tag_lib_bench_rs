@@ -116,6 +116,36 @@ pub fn get_metadata_lofty(path: String) -> AudioMetadata {
     metadata
 }
 
+pub fn get_metadata_lofty_specify_type(path: String) -> AudioMetadata {
+    let mut probe = Probe::new(std::fs::File::open(&path).unwrap());
+    probe.set_file_type(lofty::FileType::FLAC);
+    let tagged_file = probe.read().expect("ERROR: Failed to read file!");
+    let tag = match tagged_file.primary_tag() {
+        Some(primary_tag) => primary_tag,
+        None => tagged_file.first_tag().expect("ERROR: No tags found!"),
+    };
+
+    let properties = tagged_file.properties();
+
+    let duration = properties.duration();
+
+    let metadata: AudioMetadata = AudioMetadata {
+        name: tag.title().unwrap().to_string(),
+        track: tag.track().unwrap(),
+        album: tag.album().unwrap().to_string(),
+        album_artist: tag
+            .get_string(&lofty::ItemKey::AlbumArtist)
+            .unwrap_or("None")
+            .to_owned(),
+        year: tag.year().unwrap(),
+        path,
+        lossless: true,
+        duration: duration.as_secs(),
+    };
+
+    metadata
+}
+
 fn tag_reader(c: &mut Criterion) {
     let mut group = c.benchmark_group("Flac Tag Reader");
     group.bench_function(stringify!("metaflac"), |b| {
@@ -125,6 +155,13 @@ fn tag_reader(c: &mut Criterion) {
     });
     group.bench_function(stringify!("lofty"), |b| {
         b.iter(|| get_metadata_lofty(Path::new("./full_test.flac").to_string_lossy().to_string()))
+    });
+    group.bench_function(stringify!("lofty specify file type"), |b| {
+        b.iter(|| {
+            get_metadata_lofty_specify_type(
+                Path::new("./full_test.flac").to_string_lossy().to_string(),
+            )
+        })
     });
     group.finish();
 }
