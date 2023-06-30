@@ -7,10 +7,11 @@ edition = "2021"
 
 [dependencies]
 criterion = "0.4.0"
-lofty = "0.10.0"
+lofty = "0.11.0"
 metaflac = "0.2.5"
 plotters = "0.3.1"
-
+symphonia = "0.5.2"
+taglib = { git = "https://github.com/ebassi/taglib-rust" }
 [[bench]]
 name = "tag_reader"
 harness = false
